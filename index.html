@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="One Task">
+<meta name="theme-color" content="#1A1228">
+<meta name="description" content="One task at a time. Brain dump everything, then focus on one thing. Built for ADHD brains.">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>One Task — ADHD Focus</title>
+<style>
+:root {
+  --bg:        #1A1228;
+  --bg2:       #221830;
+  --bg3:       #2C2040;
+  --card:      #2A1E3C;
+  --border:    rgba(255,255,255,0.10);
+  --border2:   rgba(255,255,255,0.18);
+  --purple:    #9B6FE0;
+  --purple-lt: #B99AED;
+  --purple-dk: #6B42B8;
+  --rose:      #C47E8A;
+  --rose-lt:   #E0B0BA;
+  --gold:      #C4A355;
+  --white:     #FFFFFF;
+  --text:      #F0EAF8;
+  --text2:     #A894C8;
+  --text3:     #6B5A8A;
+  --green:     #6BBF8A;
+  --green-lt:  #A8DFB8;
+  --red:       #E07070;
+  --safe-top:  env(safe-area-inset-top, 0px);
+  --safe-bot:  env(safe-area-inset-bottom, 0px);
+  --radius:    16px;
+  --radius-sm: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%; overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg); color: var(--text);
+  max-width: 430px; margin: 0 auto;
+  display: flex; flex-direction: column;
+  height: 100dvh;
+  user-select: none;
+}
+
+/* ── SCREENS ──────────────────────────────────────── */
+.screens { flex: 1; overflow: hidden; position: relative; }
+.scr {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+  background: var(--bg);
+}
+.scr.active { transform: translateX(0); }
+.scr.left   { transform: translateX(-30%); }
+
+/* ── TOP BAR ──────────────────────────────────────── */
+.topbar {
+  padding: calc(var(--safe-top) + 12px) 20px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.topbar-title { font-size: 16px; font-weight: 600; color: var(--text); }
+.topbar-sub   { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg3); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2); font-size: 18px; transition: background 0.15s;
+}
+.icon-btn:active { background: var(--bg2); }
+
+/* ── BOTTOM NAV ───────────────────────────────────── */
+.botnav {
+  display: flex; background: var(--bg2);
+  border-top: 0.5px solid var(--border);
+  padding-bottom: var(--safe-bot);
+  flex-shrink: 0;
+}
+.bn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 3px; padding: 10px 4px 8px;
+  background: none; border: none; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.bn-icon { font-size: 22px; color: var(--text3); transition: color 0.15s; }
+.bn-label { font-size: 10px; color: var(--text3); transition: color 0.15s; }
+.bn.on .bn-icon, .bn.on .bn-label { color: var(--purple); }
+
+/* ── FOCUS SCREEN ─────────────────────────────────── */
+.focus-wrap {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px 24px calc(var(--safe-bot) + 20px);
+  gap: 28px;
+}
+
+.task-number {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text3);
+}
+
+.current-task-card {
+  width: 100%;
+  background: var(--card);
+  border: 0.5px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.ctc-glow {
+  position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+  width: 200px; height: 100px;
+  background: radial-gradient(ellipse, rgba(155,111,224,0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+.ctc-text {
+  font-size: 22px; font-weight: 500; color: var(--text);
+  line-height: 1.4; position: relative; z-index: 1;
+}
+.ctc-empty {
+  font-size: 17px; color: var(--text3); line-height: 1.6;
+}
+
+/* ── TIMER ────────────────────────────────────────── */
+.timer-ring-wrap {
+  position: relative; width: 160px; height: 160px;
+}
+.timer-svg { transform: rotate(-90deg); }
+.timer-track { fill: none; stroke: var(--bg3); stroke-width: 8; }
+.timer-fill  { fill: none; stroke: var(--purple); stroke-width: 8;
+               stroke-linecap: round; transition: stroke-dashoffset 1s linear;
+               stroke-dasharray: 440; stroke-dashoffset: 0; }
+.timer-fill.urgency { stroke: var(--rose); }
+.timer-text {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.timer-digits { font-size: 36px; font-weight: 600; color: var(--text); letter-spacing: -1px; }
+.timer-label  { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* ── TIMER CONTROLS ───────────────────────────────── */
+.timer-controls {
+  display: flex; gap: 12px; align-items: center;
+}
+.tc-btn {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--bg3); border: 0.5px solid var(--border2);
+  color: var(--text2); font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.tc-btn:active { transform: scale(0.94); }
+.tc-btn.primary {
+  width: 68px; height: 68px;
+  background: var(--purple); color: white;
+  border-color: var(--purple); font-size: 26px;
+}
+.tc-btn.primary:active { background: var(--purple-dk); }
+
+/* ── ACTION BUTTONS ───────────────────────────────── */
+.action-row { display: flex; gap: 10px; width: 100%; }
+.act-btn {
+  flex: 1; padding: 14px 10px;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--border2);
+  background: var(--bg3); color: var(--text2);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: all 0.15s; text-align: center;
+}
+.act-btn:active { transform: scale(0.97); }
+.act-btn.done {
+  background: var(--green); color: var(--bg);
+  border-color: var(--green); color: #0a2015;
+}
+.act-btn.skip { color: var(--text3); }
+
+/* ── STREAK BANNER ────────────────────────────────── */
+.streak-banner {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg3); border-radius: var(--radius-sm);
+  padding: 12px 16px; width: 100%;
+}
+.streak-num { font-size: 24px; font-weight: 600; color: var(--gold); }
+.streak-label { font-size: 12px; color: var(--text2); }
+.streak-dots { display: flex; gap: 5px; margin-left: auto; }
+.s-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--bg2); border: 0.5px solid var(--border2);
+  transition: background 0.3s;
+}
+.s-dot.done { background: var(--gold); border-color: var(--gold); }
+
+/* ── TIMER PRESET PILLS ───────────────────────────── */
+.preset-row { display: flex; gap: 8px; }
+.preset-pill {
+  flex: 1; padding: 8px 4px; text-align: center;
+  border-radius: 20px; border: 0.5px solid var(--border);
+  background: var(--bg3); color: var(--text3);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: all 0.15s;
+}
+.preset-pill.on { background: var(--purple-dk); color: var(--white); border-color: var(--purple); }
+.preset-pill:active { transform: scale(0.96); }
+
+/* ── TASKS SCREEN ─────────────────────────────────── */
+.tasks-wrap { padding: 0 16px 100px; }
+.section-lbl {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text3);
+  padding: 16px 4px 8px;
+}
+
+.task-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  background: var(--card); border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm); margin-bottom: 8px;
+  cursor: pointer; transition: all 0.15s;
+  position: relative; overflow: hidden;
+}
+.task-item:active { transform: scale(0.98); }
+.task-item.focused { border-color: var(--purple); }
+.task-item.focused::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--purple);
+}
+.task-item.completed { opacity: 0.45; }
+.task-check {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 1.5px solid var(--border2); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: transparent; transition: all 0.2s;
+}
+.task-item.completed .task-check { background: var(--green); border-color: var(--green); color: white; }
+.task-text { flex: 1; font-size: 15px; color: var(--text); line-height: 1.4; }
+.task-item.completed .task-text { text-decoration: line-through; color: var(--text3); }
+.task-focus-badge {
+  font-size: 10px; font-weight: 600; padding: 3px 8px;
+  background: var(--purple-dk); color: var(--purple-lt);
+  border-radius: 20px; flex-shrink: 0;
+}
+.task-drag { color: var(--text3); font-size: 18px; flex-shrink: 0; cursor: grab; }
+
+/* ── ADD TASK BAR ─────────────────────────────────── */
+.add-bar-wrap {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px;
+  background: var(--bg2); border-top: 0.5px solid var(--border);
+  padding: 12px 16px calc(var(--safe-bot) + 12px);
+  z-index: 20;
+}
+.add-bar {
+  display: flex; gap: 10px; align-items: center;
+}
+.add-input {
+  flex: 1; background: var(--bg3); border: 0.5px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 12px 14px;
+  font-size: 15px; color: var(--text); outline: none;
+  -webkit-appearance: none;
+}
+.add-input::placeholder { color: var(--text3); }
+.add-input:focus { border-color: var(--purple); }
+.add-submit {
+  width: 46px; height: 46px; border-radius: var(--radius-sm);
+  background: var(--purple); border: none; color: white;
+  font-size: 22px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: background 0.15s; flex-shrink: 0;
+}
+.add-submit:active { background: var(--purple-dk); }
+
+/* ── BRAIN DUMP SCREEN ────────────────────────────── */
+.dump-wrap { padding: 0 20px 40px; flex: 1; display: flex; flex-direction: column; }
+.dump-intro {
+  background: var(--card); border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 16px;
+  margin-bottom: 16px;
+}
+.dump-intro p { font-size: 14px; color: var(--text2); line-height: 1.65; }
+.dump-intro p + p { margin-top: 8px; }
+.dump-textarea {
+  flex: 1; min-height: 280px;
+  background: var(--bg3); border: 0.5px solid var(--border2);
+  border-radius: var(--radius); padding: 18px;
+  font-size: 16px; color: var(--text); line-height: 1.7;
+  resize: none; outline: none; font-family: inherit;
+}
+.dump-textarea::placeholder { color: var(--text3); }
+.dump-textarea:focus { border-color: var(--purple); }
+.dump-btn {
+  width: 100%; padding: 16px; margin-top: 14px;
+  background: var(--purple); border: none; border-radius: var(--radius-sm);
+  color: white; font-size: 16px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s;
+}
+.dump-btn:active { background: var(--purple-dk); }
+
+/* ── STATS SCREEN ─────────────────────────────────── */
+.stats-wrap { padding: 0 16px 40px; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--card); border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 16px;
+}
+.sc-val { font-size: 28px; font-weight: 600; color: var(--text); }
+.sc-lbl { font-size: 12px; color: var(--text3); margin-top: 4px; }
+.sc-accent { color: var(--purple); }
+.heatmap-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+.hm-cell {
+  width: 24px; height: 24px; border-radius: 5px;
+  background: var(--bg3); border: 0.5px solid var(--border);
+  transition: background 0.3s;
+}
+.hm-cell.d1 { background: rgba(155,111,224,0.25); }
+.hm-cell.d2 { background: rgba(155,111,224,0.50); }
+.hm-cell.d3 { background: rgba(155,111,224,0.75); }
+.hm-cell.d4 { background: var(--purple); }
+.motivation-box {
+  background: var(--card); border: 0.5px solid var(--border);
+  border-left: 3px solid var(--purple);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 14px 16px; margin-bottom: 12px;
+}
+.mot-lbl { font-size: 10px; font-weight: 600; color: var(--purple); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+.mot-text { font-size: 15px; font-style: italic; color: var(--text2); line-height: 1.55; }
+
+/* ── SETTINGS SCREEN ──────────────────────────────── */
+.settings-wrap { padding: 0 16px 40px; }
+.settings-section {
+  background: var(--card); border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm); margin-bottom: 12px; overflow: hidden;
+}
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 15px 16px; border-bottom: 0.5px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.sr-label { font-size: 15px; color: var(--text); }
+.sr-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.toggle {
+  width: 48px; height: 28px; background: var(--bg3);
+  border-radius: 14px; position: relative; cursor: pointer;
+  border: 0.5px solid var(--border2); transition: background 0.2s;
+}
+.toggle.on { background: var(--purple); }
+.toggle-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: white; transition: transform 0.2s;
+}
+.toggle.on .toggle-knob { transform: translateX(20px); }
+.brand-footer {
+  text-align: center; padding: 24px 0;
+  font-size: 12px; color: var(--text3);
+}
+
+/* ── CELEBRATION OVERLAY ──────────────────────────── */
+.celebrate {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(26,18,40,0.95);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.celebrate.show { opacity: 1; pointer-events: all; }
+.cel-emoji { font-size: 72px; margin-bottom: 16px; }
+.cel-title { font-size: 28px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.cel-sub { font-size: 16px; color: var(--text2); margin-bottom: 32px; text-align: center; padding: 0 32px; }
+.cel-btn {
+  padding: 16px 40px; background: var(--purple); border: none;
+  border-radius: var(--radius-sm); color: white;
+  font-size: 16px; font-weight: 600; cursor: pointer;
+}
+
+/* ── TOAST ────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: calc(var(--safe-bot) + 80px);
+  left: 50%; transform: translateX(-50%);
+  background: var(--bg3); color: var(--text);
+  border: 0.5px solid var(--border2);
+  padding: 10px 20px; border-radius: 20px;
+  font-size: 13px; font-weight: 500;
+  opacity: 0; transition: opacity 0.3s;
+  pointer-events: none; white-space: nowrap; z-index: 100;
+}
+.toast.show { opacity: 1; }
+
+/* ── INSTALL BANNER ───────────────────────────────── */
+.install-banner {
+  display: none; align-items: center; gap: 10px;
+  background: var(--purple-dk); padding: 10px 16px;
+  border-bottom: 0.5px solid var(--border); flex-shrink: 0;
+}
+.install-banner.show { display: flex; }
+.install-banner p { font-size: 13px; color: white; flex: 1; line-height: 1.4; }
+.install-banner p span { display: block; font-size: 11px; color: rgba(255,255,255,0.7); }
+.ib-btn {
+  padding: 7px 14px; background: white; color: var(--purple-dk);
+  border: none; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.ib-close { color: rgba(255,255,255,0.6); font-size: 20px; cursor: pointer; padding: 2px; }
+</style>
+</head>
+<body>
+
+<div class="install-banner" id="install-banner">
+  <p>Add to your home screen<span>Works offline — no subscription needed</span></p>
+  <button class="ib-btn" id="install-btn">Install</button>
+  <span class="ib-close" id="install-close">✕</span>
+</div>
+
+<div class="screens">
+
+  <!-- ── FOCUS SCREEN ──────────────────────────────── -->
+  <div class="scr active" id="scr-focus">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">One Task</div>
+        <div class="topbar-sub" id="focus-sub">your focus companion</div>
+      </div>
+      <button class="icon-btn" onclick="goScreen('settings')" aria-label="Settings">⚙</button>
+    </div>
+
+    <div class="focus-wrap">
+      <div class="task-number" id="task-number">no tasks yet</div>
+
+      <div class="current-task-card" id="focus-card">
+        <div class="ctc-glow"></div>
+        <div class="ctc-text" id="focus-task-text">
+          <span class="ctc-empty">Tap + to add your first task, or try the Brain Dump to capture everything at once.</span>
+        </div>
+      </div>
+
+      <!-- Timer ring -->
+      <div class="timer-ring-wrap">
+        <svg class="timer-svg" width="160" height="160" viewBox="0 0 160 160">
+          <circle class="timer-track" cx="80" cy="80" r="70"/>
+          <circle class="timer-fill" id="timer-ring" cx="80" cy="80" r="70"/>
+        </svg>
+        <div class="timer-text">
+          <div class="timer-digits" id="timer-display">25:00</div>
+          <div class="timer-label" id="timer-label">focus</div>
+        </div>
+      </div>
+
+      <!-- Preset pills -->
+      <div class="preset-row" id="preset-row">
+        <button class="preset-pill on" onclick="setPreset(15,this)">15 min</button>
+        <button class="preset-pill on" onclick="setPreset(25,this)">25 min</button>
+        <button class="preset-pill" onclick="setPreset(45,this)">45 min</button>
+        <button class="preset-pill" onclick="setPreset(60,this)">60 min</button>
+      </div>
+
+      <!-- Timer controls -->
+      <div class="timer-controls">
+        <button class="tc-btn" onclick="resetTimer()" aria-label="Reset">↺</button>
+        <button class="tc-btn primary" id="play-btn" onclick="toggleTimer()" aria-label="Play/Pause">▶</button>
+        <button class="tc-btn" onclick="skipBreak()" aria-label="Skip" id="skip-focus-btn" style="opacity:0.4" disabled>⏭</button>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="action-row" id="action-row">
+        <button class="act-btn skip" onclick="skipTask()" id="skip-btn">↷ Skip</button>
+        <button class="act-btn done" onclick="doneTask()" id="done-btn">✓ Done</button>
+      </div>
+
+      <!-- Streak -->
+      <div class="streak-banner">
+        <div>
+          <div class="streak-num" id="streak-num">0</div>
+          <div class="streak-label">day streak 🔥</div>
+        </div>
+        <div class="streak-dots" id="streak-dots"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TASKS SCREEN ───────────────────────────────── -->
+  <div class="scr" id="scr-tasks">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Tasks</div>
+        <div class="topbar-sub" id="tasks-sub">0 remaining</div>
+      </div>
+      <button class="icon-btn" onclick="clearCompleted()" aria-label="Clear completed" title="Clear completed">🗑</button>
+    </div>
+
+    <div class="tasks-wrap">
+      <div class="section-lbl">Queue</div>
+      <div id="task-list"></div>
+      <div class="section-lbl" id="done-lbl" style="display:none">Completed today</div>
+      <div id="done-list"></div>
+    </div>
+
+    <div class="add-bar-wrap">
+      <div class="add-bar">
+        <input class="add-input" id="add-input" type="text" placeholder="Add a task..." maxlength="120"
+               onkeydown="if(event.key==='Enter')addTask()">
+        <button class="add-submit" onclick="addTask()" aria-label="Add task">+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BRAIN DUMP SCREEN ──────────────────────────── -->
+  <div class="scr" id="scr-dump">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Brain Dump</div>
+        <div class="topbar-sub">get it all out, one line at a time</div>
+      </div>
+    </div>
+
+    <div class="dump-wrap">
+      <div class="dump-intro">
+        <p>Type everything that's in your head — one thought per line. Don't organise, don't judge, just get it out.</p>
+        <p>When you're ready, tap the button below and each line becomes a task in your queue.</p>
+      </div>
+      <textarea class="dump-textarea" id="dump-area"
+        placeholder="Pay the electricity bill&#10;Call mum back&#10;Finish the report intro&#10;Buy milk&#10;Email Sarah about the meeting&#10;..."></textarea>
+      <button class="dump-btn" onclick="processDump()">Add all to queue →</button>
+    </div>
+  </div>
+
+  <!-- ── STATS SCREEN ───────────────────────────────── -->
+  <div class="scr" id="scr-stats">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Progress</div>
+        <div class="topbar-sub">your focus history</div>
+      </div>
+    </div>
+
+    <div class="stats-wrap">
+      <div class="motivation-box">
+        <div class="mot-lbl">Today's thought</div>
+        <div class="mot-text" id="daily-mot">"Progress, not perfection."</div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="sc-val sc-accent" id="stat-today">0</div>
+          <div class="sc-lbl">done today</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-val sc-accent" id="stat-total">0</div>
+          <div class="sc-lbl">all time</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-val" id="stat-streak">0</div>
+          <div class="sc-lbl">day streak 🔥</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-val" id="stat-focus">0</div>
+          <div class="sc-lbl">focus minutes</div>
+        </div>
+      </div>
+
+      <div class="section-lbl">Last 28 days</div>
+      <div class="stat-card" style="margin-bottom:12px">
+        <div class="heatmap-row" id="heatmap"></div>
+      </div>
+
+      <div class="section-lbl">Recent completions</div>
+      <div id="recent-list"></div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS SCREEN ───────────────────────────── -->
+  <div class="scr" id="scr-settings">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Settings</div>
+      </div>
+      <button class="icon-btn" onclick="goScreen('focus')" aria-label="Close">✕</button>
+    </div>
+
+    <div class="settings-wrap">
+      <div class="section-lbl">Timer</div>
+      <div class="settings-section">
+        <div class="setting-row">
+          <div><div class="sr-label">Auto-start breaks</div><div class="sr-sub">Start break timer when focus ends</div></div>
+          <div class="toggle" id="tog-autobreak" onclick="toggleSetting('autobreak')"><div class="toggle-knob"></div></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="sr-label">Vibrate on complete</div><div class="sr-sub">Haptic feedback when timer ends</div></div>
+          <div class="toggle on" id="tog-vibrate" onclick="toggleSetting('vibrate')"><div class="toggle-knob"></div></div>
+        </div>
+      </div>
+
+      <div class="section-lbl">Focus</div>
+      <div class="settings-section">
+        <div class="setting-row">
+          <div><div class="sr-label">Celebrate completions</div><div class="sr-sub">Show celebration when a task is done</div></div>
+          <div class="toggle on" id="tog-celebrate" onclick="toggleSetting('celebrate')"><div class="toggle-knob"></div></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="sr-label">Show streaks</div><div class="sr-sub">Daily completion streak counter</div></div>
+          <div class="toggle on" id="tog-streaks" onclick="toggleSetting('streaks')"><div class="toggle-knob"></div></div>
+        </div>
+      </div>
+
+      <div class="section-lbl">Data</div>
+      <div class="settings-section">
+        <div class="setting-row" onclick="resetStreak()" style="cursor:pointer">
+          <div><div class="sr-label">Reset streak</div><div class="sr-sub">Start your streak from zero</div></div>
+          <span style="color:var(--text3);font-size:18px">›</span>
+        </div>
+        <div class="setting-row" onclick="clearAll()" style="cursor:pointer">
+          <div><div class="sr-label" style="color:var(--red)">Clear all data</div><div class="sr-sub">Wipe tasks, history, and stats</div></div>
+          <span style="color:var(--text3);font-size:18px">›</span>
+        </div>
+      </div>
+
+      <div class="brand-footer">
+        <div style="font-size:14px;font-weight:500;color:var(--text2);margin-bottom:4px">Aeryn Studio</div>
+        <div>One Task — ADHD Focus App</div>
+        <div style="margin-top:4px;color:var(--purple)">aerynstudio.etsy.com</div>
+        <div style="margin-top:8px;font-style:italic">"Beautifully on purpose."</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom nav -->
+<div class="botnav">
+  <button class="bn on" id="bn-focus" onclick="goScreen('focus',this)">
+    <span class="bn-icon">◎</span><span class="bn-label">Focus</span>
+  </button>
+  <button class="bn" id="bn-tasks" onclick="goScreen('tasks',this)">
+    <span class="bn-icon">☰</span><span class="bn-label">Tasks</span>
+  </button>
+  <button class="bn" id="bn-dump" onclick="goScreen('dump',this)">
+    <span class="bn-icon">⚡</span><span class="bn-label">Dump</span>
+  </button>
+  <button class="bn" id="bn-stats" onclick="goScreen('stats',this)">
+    <span class="bn-icon">◈</span><span class="bn-label">Progress</span>
+  </button>
+</div>
+
+<!-- Celebration overlay -->
+<div class="celebrate" id="celebrate">
+  <div class="cel-emoji" id="cel-emoji">✅</div>
+  <div class="cel-title" id="cel-title">Task done!</div>
+  <div class="cel-sub" id="cel-sub">Great work. On to the next one.</div>
+  <button class="cel-btn" onclick="closeCelebrate()">Keep going →</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const MOTIVATIONS = [
+  "You don't have to do it all. Just do the next thing.",
+  "Done is better than perfect.",
+  "One task at a time. That's enough.",
+  "Progress, not perfection.",
+  "The hardest part is starting. You already did that.",
+  "Small steps still move you forward.",
+  "You don't need to see the whole staircase — just the next step.",
+  "Clarity comes from action, not thought.",
+  "You've finished hard things before.",
+  "Focus is a skill. You're practising it right now.",
+  "Your brain is not broken. It just works differently.",
+  "One minute of focus beats an hour of planning.",
+  "Finish one thing. Then decide what's next.",
+];
+
+const CELEBRATE_MESSAGES = [
+  { emoji:"✅", title:"Task done!", sub:"Great work. On to the next one." },
+  { emoji:"⚡", title:"Nailed it!", sub:"That one's crossed off forever." },
+  { emoji:"🌟", title:"One down!", sub:"Every done task counts." },
+  { emoji:"🎯", title:"Hit the target!", sub:"You focused and finished. That's huge." },
+  { emoji:"🔥", title:"On fire!", sub:"Keep this energy going." },
+  { emoji:"💜", title:"Done!", sub:"Your brain did the thing. Be proud." },
+];
+
+// ── STATE ─────────────────────────────────────────────────────
+let ST = {
+  tasks: [],           // {id, text, done, doneAt, addedAt}
+  settings: { autobreak:false, vibrate:true, celebrate:true, streaks:true },
+  stats: { total:0, today:0, todayDate:'', streak:0, lastDate:'', focusMinutes:0, history:{} },
+  timer: { preset:25, running:false, secondsLeft:25*60, mode:'focus' },
+};
+
+function save() { try { localStorage.setItem('onetask',JSON.stringify(ST)); } catch(e){} }
+function load() {
+  try {
+    const d = localStorage.getItem('onetask');
+    if(d) { const p=JSON.parse(d); ST={...ST,...p}; ST.timer.running=false; }
+  } catch(e){}
+  // Reset today's count if new day
+  const today = new Date().toDateString();
+  if(ST.stats.todayDate !== today) { ST.stats.today=0; ST.stats.todayDate=today; save(); }
+}
+
+// ── SCREEN NAV ─────────────────────────────────────────────────
+const BN_MAP = { focus:'bn-focus', tasks:'bn-tasks', dump:'bn-dump', stats:'bn-stats' };
+let currentScr = 'focus';
+
+function goScreen(id, bnEl) {
+  if(id === currentScr) return;
+  document.getElementById('scr-'+currentScr)?.classList.add('left');
+  setTimeout(() => document.getElementById('scr-'+currentScr)?.classList.remove('left'), 350);
+  document.getElementById('scr-'+currentScr)?.classList.remove('active');
+  document.getElementById('scr-'+id)?.classList.add('active');
+  currentScr = id;
+  Object.values(BN_MAP).forEach(b => document.getElementById(b)?.classList.remove('on'));
+  if(BN_MAP[id]) document.getElementById(BN_MAP[id])?.classList.add('on');
+  if(id==='stats') renderStats();
+  if(id==='tasks') renderTasks();
+}
+
+// ── TASKS ──────────────────────────────────────────────────────
+function activeTasks() { return ST.tasks.filter(t => !t.done); }
+function doneTasks()   { return ST.tasks.filter(t => t.done); }
+function focusTask()   { return activeTasks()[0] || null; }
+
+function addTask(text) {
+  const inp = document.getElementById('add-input');
+  const txt = (text || inp?.value || '').trim();
+  if(!txt) return;
+  ST.tasks.push({ id: Date.now(), text:txt, done:false, addedAt: Date.now() });
+  if(inp) inp.value = '';
+  save(); renderFocus(); renderTasks();
+  showToast('Task added');
+}
+
+function skipTask() {
+  const active = activeTasks();
+  if(active.length < 2) { showToast('No other tasks to skip to'); return; }
+  // Move first to end
+  const idx = ST.tasks.indexOf(active[0]);
+  ST.tasks.push(ST.tasks.splice(idx, 1)[0]);
+  save(); renderFocus(); renderTasks();
+  showToast('Skipped — next task up');
+}
+
+function doneTask() {
+  const t = focusTask();
+  if(!t) { showToast('No task focused'); return; }
+  t.done = true; t.doneAt = Date.now();
+  ST.stats.total++;
+  ST.stats.today++;
+  const today = new Date().toDateString();
+  ST.stats.history[today] = (ST.stats.history[today]||0)+1;
+  // Streak
+  const last = ST.stats.lastDate;
+  const yesterday = new Date(Date.now()-86400000).toDateString();
+  if(last === yesterday) ST.stats.streak++;
+  else if(last !== today) ST.stats.streak = 1;
+  ST.stats.lastDate = today;
+  stopTimer(); resetTimer(false);
+  save(); renderFocus(); renderTasks();
+  if(ST.settings.celebrate) showCelebrate(t.text);
+  if(ST.settings.vibrate && navigator.vibrate) navigator.vibrate([50,30,80]);
+}
+
+function clearCompleted() {
+  ST.tasks = ST.tasks.filter(t => !t.done);
+  save(); renderTasks(); renderFocus();
+  showToast('Cleared completed tasks');
+}
+
+function processDump() {
+  const area = document.getElementById('dump-area');
+  const lines = area.value.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length) { showToast('Nothing to add'); return; }
+  lines.forEach(l => {
+    ST.tasks.push({ id: Date.now()+Math.random(), text:l, done:false, addedAt:Date.now() });
+  });
+  area.value = '';
+  save(); renderFocus(); renderTasks();
+  showToast(`${lines.length} tasks added to queue`);
+  goScreen('focus');
+}
+
+// ── RENDER FOCUS ───────────────────────────────────────────────
+function renderFocus() {
+  const t = focusTask();
+  const active = activeTasks();
+  const taskEl = document.getElementById('focus-task-text');
+  const numEl  = document.getElementById('task-number');
+  const subEl  = document.getElementById('focus-sub');
+  const skipBtn= document.getElementById('skip-btn');
+  const doneBtn= document.getElementById('done-btn');
+
+  if(t) {
+    taskEl.innerHTML = `<span>${escHtml(t.text)}</span>`;
+    taskEl.className = 'ctc-text';
+    numEl.textContent = active.length > 1
+      ? `task 1 of ${active.length}`
+      : 'your one task right now';
+    subEl.textContent = 'focus on this. nothing else.';
+    skipBtn.disabled = false; skipBtn.style.opacity='1';
+    doneBtn.disabled = false;
+  } else {
+    taskEl.innerHTML = `<span class="ctc-empty">All clear! Add tasks on the Tasks tab, or use Brain Dump to capture everything at once.</span>`;
+    taskEl.className = 'ctc-text';
+    numEl.textContent = 'queue empty';
+    subEl.textContent = 'your focus companion';
+    skipBtn.disabled = true; skipBtn.style.opacity='0.4';
+    doneBtn.disabled = true;
+  }
+
+  // Streak
+  const streakEl = document.getElementById('streak-num');
+  const dotsEl   = document.getElementById('streak-dots');
+  if(streakEl) streakEl.textContent = ST.stats.streak;
+  if(dotsEl) {
+    dotsEl.innerHTML = '';
+    const today = new Date().toDateString();
+    for(let i=6;i>=0;i--) {
+      const d = new Date(Date.now()-i*86400000).toDateString();
+      const div = document.createElement('div');
+      div.className = 's-dot' + (ST.stats.history[d] ? ' done' : '');
+      dotsEl.appendChild(div);
+    }
+  }
+}
+
+function renderTasks() {
+  const listEl = document.getElementById('task-list');
+  const doneEl = document.getElementById('done-list');
+  const doneLbl= document.getElementById('done-lbl');
+  const subEl  = document.getElementById('tasks-sub');
+  const active = activeTasks();
+  const done   = doneTasks();
+
+  subEl.textContent = `${active.length} remaining`;
+
+  listEl.innerHTML = active.length ? active.map((t,i) => `
+    <div class="task-item ${i===0?'focused':''}" onclick="focusTaskById(${t.id})">
+      <div class="task-check">${i===0?'◉':''}</div>
+      <div class="task-text">${escHtml(t.text)}</div>
+      ${i===0?'<span class="task-focus-badge">focused</span>':''}
+      <span class="task-drag" onclick="event.stopPropagation();removeTask(${t.id})">✕</span>
+    </div>`).join('') : '<div style="padding:32px;text-align:center;color:var(--text3);font-size:14px">Queue is empty. Add a task below or use Brain Dump.</div>';
+
+  doneLbl.style.display = done.length ? '' : 'none';
+  doneEl.innerHTML = done.slice().reverse().slice(0,5).map(t => `
+    <div class="task-item completed">
+      <div class="task-check">✓</div>
+      <div class="task-text">${escHtml(t.text)}</div>
+    </div>`).join('');
+}
+
+function focusTaskById(id) {
+  const idx = ST.tasks.findIndex(t => t.id===id && !t.done);
+  if(idx < 0) return;
+  const t = ST.tasks.splice(idx,1)[0];
+  const firstActive = ST.tasks.findIndex(t2=>!t2.done);
+  if(firstActive >= 0) ST.tasks.splice(firstActive,0,t);
+  else ST.tasks.unshift(t);
+  save(); renderTasks(); renderFocus();
+  goScreen('focus');
+}
+
+function removeTask(id) {
+  ST.tasks = ST.tasks.filter(t => t.id!==id);
+  save(); renderTasks(); renderFocus();
+}
+
+// ── TIMER ──────────────────────────────────────────────────────
+let timerInterval = null;
+const FULL_CIRC = 2 * Math.PI * 70; // ~440
+
+function setPreset(mins, btn) {
+  if(ST.timer.running) return;
+  document.querySelectorAll('.preset-pill').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  ST.timer.preset = mins;
+  ST.timer.secondsLeft = mins * 60;
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const s = ST.timer.secondsLeft;
+  const m = Math.floor(s/60);
+  const sec = s % 60;
+  const el = document.getElementById('timer-display');
+  if(el) el.textContent = `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  // Ring
+  const ring = document.getElementById('timer-ring');
+  if(ring) {
+    const total = ST.timer.preset * 60;
+    const frac  = s / total;
+    ring.style.strokeDashoffset = FULL_CIRC * (1 - frac);
+    ring.classList.toggle('urgency', s <= 60 && ST.timer.running);
+  }
+  // Skip btn
+  const skipBtn = document.getElementById('skip-focus-btn');
+  if(skipBtn) { skipBtn.disabled=!ST.timer.running; skipBtn.style.opacity=ST.timer.running?'1':'0.4'; }
+}
+
+function toggleTimer() {
+  if(ST.timer.running) stopTimer();
+  else startTimer();
+}
+
+function startTimer() {
+  if(!focusTask() && ST.timer.mode==='focus') { showToast('Add a task first'); return; }
+  ST.timer.running = true;
+  document.getElementById('play-btn').textContent = '⏸';
+  timerInterval = setInterval(tickTimer, 1000);
+  document.getElementById('preset-row').style.opacity = '0.4';
+  document.getElementById('preset-row').style.pointerEvents = 'none';
+}
+
+function stopTimer() {
+  ST.timer.running = false;
+  clearInterval(timerInterval);
+  document.getElementById('play-btn').textContent = '▶';
+  document.getElementById('preset-row').style.opacity = '1';
+  document.getElementById('preset-row').style.pointerEvents = 'all';
+}
+
+function resetTimer(full=true) {
+  stopTimer();
+  if(full) {
+    ST.timer.secondsLeft = ST.timer.preset * 60;
+    ST.timer.mode = 'focus';
+    document.getElementById('timer-label').textContent = 'focus';
+  }
+  updateTimerDisplay();
+}
+
+function skipBreak() { resetTimer(); }
+
+function tickTimer() {
+  ST.timer.secondsLeft--;
+  if(ST.timer.secondsLeft <= 0) {
+    timerComplete();
+    return;
+  }
+  // Track focus minutes
+  if(ST.timer.mode === 'focus' && ST.timer.secondsLeft % 60 === 0) {
+    ST.stats.focusMinutes++;
+    save();
+  }
+  updateTimerDisplay();
+}
+
+function timerComplete() {
+  stopTimer();
+  if(navigator.vibrate) navigator.vibrate([100,50,100,50,200]);
+  if(ST.timer.mode === 'focus') {
+    showToast('Focus session complete! Take a break.');
+    ST.stats.focusMinutes += Math.ceil(ST.timer.preset);
+    save();
+    if(ST.settings.autobreak) {
+      ST.timer.secondsLeft = 5 * 60;
+      ST.timer.mode = 'break';
+      document.getElementById('timer-label').textContent = 'break';
+      updateTimerDisplay();
+      startTimer();
+    } else {
+      ST.timer.secondsLeft = 0;
+      updateTimerDisplay();
+    }
+  } else {
+    showToast('Break over! Ready to focus?');
+    ST.timer.secondsLeft = ST.timer.preset * 60;
+    ST.timer.mode = 'focus';
+    document.getElementById('timer-label').textContent = 'focus';
+    updateTimerDisplay();
+  }
+}
+
+// ── STATS ──────────────────────────────────────────────────────
+function renderStats() {
+  document.getElementById('stat-today').textContent  = ST.stats.today;
+  document.getElementById('stat-total').textContent  = ST.stats.total;
+  document.getElementById('stat-streak').textContent = ST.stats.streak;
+  document.getElementById('stat-focus').textContent  = ST.stats.focusMinutes;
+
+  // Heatmap — last 28 days
+  const hm = document.getElementById('heatmap');
+  if(hm) {
+    hm.innerHTML = '';
+    for(let i=27;i>=0;i--) {
+      const d = new Date(Date.now()-i*86400000).toDateString();
+      const count = ST.stats.history[d] || 0;
+      const div = document.createElement('div');
+      div.className = 'hm-cell' + (count>=4?' d4':count>=2?' d3':count>=1?' d2':count>0?' d1':'');
+      div.title = `${d}: ${count} tasks`;
+      hm.appendChild(div);
+    }
+  }
+
+  // Recent completions
+  const recent = document.getElementById('recent-list');
+  const done = doneTasks().slice().reverse().slice(0,6);
+  if(recent) {
+    recent.innerHTML = done.length ? done.map(t=>`
+      <div class="task-item completed" style="margin-bottom:8px">
+        <div class="task-check">✓</div>
+        <div class="task-text">${escHtml(t.text)}</div>
+      </div>`).join('') : '<div style="padding:16px;text-align:center;color:var(--text3);font-size:14px">Complete tasks to see them here.</div>';
+  }
+
+  // Motivation
+  const today = new Date().getDay();
+  document.getElementById('daily-mot').textContent = `"${MOTIVATIONS[today % MOTIVATIONS.length]}"`;
+}
+
+// ── SETTINGS ───────────────────────────────────────────────────
+function toggleSetting(key) {
+  ST.settings[key] = !ST.settings[key];
+  const tog = document.getElementById('tog-'+key);
+  if(tog) tog.classList.toggle('on', ST.settings[key]);
+  save();
+}
+
+function applySettings() {
+  Object.entries(ST.settings).forEach(([k,v]) => {
+    const tog = document.getElementById('tog-'+k);
+    if(tog) tog.classList.toggle('on', v);
+  });
+}
+
+function resetStreak() {
+  if(confirm('Reset your streak to zero?')) {
+    ST.stats.streak = 0; ST.stats.lastDate = '';
+    save(); renderFocus();
+    showToast('Streak reset');
+  }
+}
+
+function clearAll() {
+  if(confirm('Clear ALL data? This cannot be undone.')) {
+    localStorage.removeItem('onetask');
+    location.reload();
+  }
+}
+
+// ── CELEBRATION ─────────────────────────────────────────────────
+function showCelebrate(taskText) {
+  const msg = CELEBRATE_MESSAGES[Math.floor(Math.random()*CELEBRATE_MESSAGES.length)];
+  document.getElementById('cel-emoji').textContent = msg.emoji;
+  document.getElementById('cel-title').textContent = msg.title;
+  document.getElementById('cel-sub').textContent   = msg.sub;
+  document.getElementById('celebrate').classList.add('show');
+  setTimeout(closeCelebrate, 3200);
+}
+
+function closeCelebrate() {
+  document.getElementById('celebrate').classList.remove('show');
+}
+
+// ── TOAST ───────────────────────────────────────────────────────
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ── HELPERS ─────────────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── PWA INSTALL ─────────────────────────────────────────────────
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('show');
+});
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-banner').classList.remove('show');
+});
+document.getElementById('install-close').addEventListener('click', () => {
+  document.getElementById('install-banner').classList.remove('show');
+});
+
+// ── SERVICE WORKER ───────────────────────────────────────────────
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+
+// ── INIT ────────────────────────────────────────────────────────
+load();
+applySettings();
+updateTimerDisplay();
+renderFocus();
+renderTasks();
+
+// Handle ?action= deep links
+const p = new URLSearchParams(location.search);
+if(p.get('action')==='add') { goScreen('tasks'); document.getElementById('add-input')?.focus(); }
+if(p.get('action')==='dump') goScreen('dump');
+</script>
+</body>
+</html>
